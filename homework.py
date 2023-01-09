@@ -53,6 +53,7 @@ def send_message(bot, message):
             chat_id=TELEGRAM_CHAT_ID,
             text=message
         )
+        logging.debug('Отправка сообщения в Telegram')
     except telegram.error.TelegramError:
         logger.error('Ошибка при отправке сообщения Telegram')
         raise SendMessageTelegramError
@@ -118,8 +119,6 @@ def parse_status(homework):
     if homework_name is None:
         raise TypeError
     verdict = HOMEWORK_VERDICTS.get(status)
-    if verdict is None:
-        raise ParseStatusError
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
@@ -130,7 +129,7 @@ def main():
         sys.exit()
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
-    default_message: str = ''
+    previous_message = ''
     while True:
         try:
             response = get_api_answer(timestamp)
@@ -138,18 +137,18 @@ def main():
             if homeworks:
                 message = parse_status(homeworks[0])
             else:
-                message = default_message
+                message = previous_message
                 logger.debug('Нет изменений')
-            if message != default_message:
+            if message != previous_message:
                 send_message(bot, message)
-                default_message = message
+                previous_message = message
         except SendMessageTelegramError:
             logger.error('Ошибка при отправке сообщения')
         except Exception as error:
             logger.error(f'Сбой в работе программы: {error}')
-            if message != default_message:
+            if message != previous_message:
                 send_message(bot, message)
-                default_message = message
+                previous_message = message
         finally:
             time.sleep(RETRY_PERIOD)
 
