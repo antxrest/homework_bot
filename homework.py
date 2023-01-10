@@ -12,7 +12,6 @@ from dotenv import load_dotenv
 from exceptions import (
     RequestAPIError,
     SendMessageTelegramError,
-    ParseStatusError,
     JsonError
 )
 
